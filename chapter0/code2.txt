@@ -1,0 +1,126 @@
+let model;
+let targetLabel = 'L';
+let state = 'collection';
+let resolution = 20;
+let collectedPoints = [];
+let boundaryPoints = [];
+
+function setup() {
+  createCanvas(400, 400);
+
+  let options = {
+    inputs: ['x', 'y'],
+    outputs: ['label'],
+    task: 'classification',
+    debug: true,
+    learningRate: 0.5
+  };
+  model = ml5.neuralNetwork(options);
+
+  background(255);
+  textSize(16);
+}
+
+function redrawCollectedPoints() {
+  for (let pt of collectedPoints) {
+    stroke(0);
+    noFill();
+    ellipse(pt.x, pt.y, 24);
+    fill(0);
+    noStroke();
+    textAlign(CENTER, CENTER);
+    text(pt.label, pt.x, pt.y);
+  }
+}
+
+function keyPressed() {
+  if (key === 't' || key === 'T') {
+    if (!model.data) {
+      console.warn('No data to train on!');
+      return;
+    }
+    state = 'training';
+    model.normalizeData();
+    let options = { epochs: 50 }; // you can increase
+    model.train(options, whileTraining, finishedTraining);
+  } else if (key === 's' || key === 'S') {
+    model.saveData('mouse-notes');
+  } else if (key.length === 1) {
+    targetLabel = key.toUpperCase();
+    console.log('Label set to:', targetLabel);
+  }
+}
+
+// called at the end of each epoch
+function whileTraining(epoch, loss) {
+  console.log(`Epoch: ${epoch}, Loss: ${loss}`);
+
+  // compute boundary for all points
+  boundaryPoints = [];
+  let totalX = width / resolution;
+  let totalY = height / resolution;
+  for (let x = 0; x < width; x += resolution) {
+    for (let y = 0; y < height; y += resolution) {
+      let inputs = { x, y };
+      model.classify(inputs, (err, results) => {
+        if (!err && results && results[0]) {
+          boundaryPoints.push({ x, y, label: results[0].label });
+          drawLiveBoundary(); // draw as results come in
+        }
+      });
+    }
+  }
+}
+
+// after training
+function finishedTraining() {
+  console.log('Training finished.');
+  state = 'prediction';
+}
+
+// draw the boundary and points
+function drawLiveBoundary() {
+  background(255);
+
+  for (let cell of boundaryPoints) {
+    noStroke();
+    if (cell.label === 'L') fill(255, 0, 0, 60);
+    else fill(0, 255, 0, 60);
+    rect(cell.x, cell.y, resolution, resolution);
+  }
+
+  redrawCollectedPoints();
+}
+
+function mousePressed() {
+  let inputs = { x: mouseX, y: mouseY };
+
+  if (state === 'collection') {
+    let target = { label: targetLabel };
+    model.addData(inputs, target);
+    collectedPoints.push({ x: mouseX, y: mouseY, label: targetLabel });
+    redrawCollectedPoints();
+  } else if (state === 'prediction') {
+    model.classify(inputs, gotResults);
+  }
+}
+
+function gotResults(error, results) {
+  if (error) {
+    console.error(error);
+    return;
+  }
+
+  let label = results[0].label;
+  stroke(0);
+  fill(0, 0, 255, 100);
+  ellipse(mouseX, mouseY, 24);
+  fill(0);
+  noStroke();
+  textAlign(CENTER, CENTER);
+  text(label, mouseX, mouseY);
+}
+
+function draw() {
+  // everything is event-driven
+}

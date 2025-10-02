@@ -1,0 +1,47 @@
+/*
+ * 👋 Hello! This is an ml5.js example made and shared with ❤️.
+ * Learn more about the ml5.js project: https://ml5js.org/
+ * ml5.js license and Code of Conduct: https://github.com/ml5js/ml5-next-gen/blob/main/LICENSE.md
+ *
+ * This example demonstrates classifying a static image using ml5.imageClassifier + Teachable Machine.
+ */
+
+let classifier;
+let img; // Variable to hold the static image
+let label = "Model loading...";
+
+// Replace this with your Teachable Machine model URL
+let imageModelURL = "https://teachablemachine.withgoogle.com/models/bXy2kDNi/";
+
+function preload() {
+  // Load the model
+  classifier = ml5.imageClassifier(imageModelURL + "model.json");
+  
+  // Load a static image (replace 'your-image.jpg' with your image path or URL)
+  img = loadImage('your-image.jpg'); // 👈 Change this to your image file
+}
+
+function setup() {
+  createCanvas(640, 480);
+  
+  // Classify the loaded image once
+  classifier.classify(img, gotResult);
+}
+
+function draw() {
+  // Display the image
+  image(img, 0, 0, 640, 480);
+  
+  // Display the classification result
+  fill(0, 255, 0);
+  textSize(32);
+  text(label, 20, 50);
+}
+
+function gotResult(results) {
+  if (results && results[0]) {
+    label = results[0].label + ": " + nf(results[0].confidence, 0, 2); // Show label + confidence (e.g., "Cat: 0.95")
+  } else {
+    label = "Prediction failed";
+  }
+}

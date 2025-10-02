@@ -1,0 +1,47 @@
+let img;
+let classifier;
+let modelReadyFlag = false;
+let resultsText = "";
+
+function preload() {
+  classifier = ml5.imageClassifier('MobileNet', () => {
+    console.log("Model is ready!");
+    modelReadyFlag = true;
+
+    loadJSON('https://dog.ceo/api/breeds/image/random', gotDog);
+  });
+}
+
+function setup() {
+  createCanvas(400, 400);
+}
+
+function gotDog(data) {
+  let url = data.message;
+  img = loadImage(url, () => {
+    if (modelReadyFlag) {
+      classifier.classify(img, gotResult);
+    }
+  });
+}
+
+function gotResult(results) {
+  resultsText = `${results[0].label} (${nf(results[0].confidence * 100, 2, 1)}%)`;
+  console.log(results);
+}
+
+function draw() {
+  background(220);
+
+  if (img) {
+    image(img, 0, 0, width, height);
+
+    fill(125);
+    rect(0, height - 40 , width, 40);
+
+    fill(255);
+    textSize(16);
+    textAlign(CENTER);
+    text(resultsText, width / 2, height - 20);
+  }
+}

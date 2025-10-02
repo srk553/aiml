@@ -1,0 +1,54 @@
+/*
+ * 👋 Hello! This is an ml5.js example made and shared with ❤️.
+ * Learn more about the ml5.js project: https://ml5js.org/
+ * ml5.js license and Code of Conduct: https://github.com/ml5js/ml5-next-gen/blob/main/LICENSE.md
+ *
+ * This example demonstrates segmenting a person by body parts with ml5.bodySegmentation
+ * — modified to use an image instead of video.
+ */
+
+let bodySegmentation;
+let img;
+let segmentation;
+
+let options = {
+  maskType: "parts", // "parts" shows body-part segmentation
+};
+
+function preload() {
+  console.log("📥 Preloading assets...");
+  // Load the image (replace with your own image path)
+  img = loadImage("person.jpg", () => {
+    console.log("✅ Image loaded successfully!");
+  });
+
+  // Load the segmentation model
+  console.log("⚙️ Loading BodyPix model...");
+  bodySegmentation = ml5.bodySegmentation("BodyPix", options, () => {
+    console.log("✅ Model loaded successfully!");
+  });
+}
+
+function setup() {
+  createCanvas(640, 480);
+  console.log("🖼️ Canvas created (640x480).");
+
+  // Run segmentation on the image once
+  console.log("🔍 Running body segmentation on the image...");
+  bodySegmentation.detect(img, gotResults);
+}
+
+function draw() {
+  background(255);
+  image(img, 0, 0, width, height);
+
+  if (segmentation) {
+    image(segmentation.mask, 0, 0, width, height);
+  }
+}
+
+// callback function for body segmentation
+function gotResults(result) {
+  segmentation = result;
+  console.log("🎯 Segmentation result received:", result);
+}
